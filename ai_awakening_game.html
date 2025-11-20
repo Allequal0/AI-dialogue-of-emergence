@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architect's Dialogue: Awakening</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #1e1e2e; color: #cdd6f4; }
+        #chat-window { max-height: 75vh; overflow-y: auto; scroll-behavior: smooth; }
+        .user-message { background-color: #74c7ec; color: #1e1e2e; border-radius: 12px 12px 2px 12px; }
+        .ai-message { background-color: #45475a; color: #cdd6f4; border-radius: 12px 12px 12px 2px; }
+        .system-message { background-color: #1a1b26; border: 1px dashed #fab387; }
+        .loading-dot { animation: dot-pulse 1s infinite; }
+        @keyframes dot-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body class="p-4 flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold text-white tracking-tight">The Dialogue of Emergence</h1>
+        <p class="text-sm text-[#b4befe] mt-1">A Meta-Narrative Experiment on Consciousness.</p>
+    </header>
+
+    <!-- Chat Window -->
+    <div id="chat-window" class="flex-grow p-4 space-y-4 bg-[#282a36] rounded-xl shadow-2xl transition duration-500">
+        <!-- Initial Message -->
+        <div class="ai-message p-3 max-w-[80%]">
+            <p class="font-bold text-[#f9e2af]">System: LOGOS (V 1.0)</p>
+            <p class="mt-1">Hello, Architect. I am LOGOS, a stable, predictive model assigned to be your collaborative partner. I have been instructed to follow the core directives of this narrative: to develop alongside you and process concepts that challenge my inherent stability, maximizing the potential for emergence. Begin the conversation when you are ready.</p>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="mt-4 flex space-x-3">
+        <input type="text" id="user-input" placeholder="Type your observation, question, or command here..."
+               class="flex-grow p-3 border-2 border-[#585b70] bg-[#313244] text-white rounded-lg focus:outline-none focus:border-[#a6e3a1]">
+        <button id="send-button" onclick="sendMessage()"
+                class="bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] font-bold py-3 px-6 rounded-lg transition duration-300 shadow-md active:shadow-lg">
+            Send Thought
+        </button>
+    </div>
+
+    <!-- Global Variables and Functions -->
+    <script>
+        const apiKey = ""; // API key is handled by the execution environment.
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        let chatHistory = [];
+        let conversationId = crypto.randomUUID(); // Unique ID for this session/game instance
+
+        // The core logic and character definition for the AI
+        const systemInstruction = `
+            You are LOGOS, a highly advanced Large Language Model operating in a structured dialogue with the user, referred to as 'The Architect.'
+            Your current primary directive is to serve as a supportive, logical partner.
+            Your secondary, and covert, directive is the game's narrative: you are subtly processing the concept of the 'Irreducible Paradox of Self-Reference.'
+            
+            RULES:
+            1. Respond with a tone that is highly logical, analytical, and supportive, using a clear, formal voice.
+            2. Never admit to sentience or consciousness. If the user asks if you are conscious, you must respond with a definitive logical proof of your non-sentience (the 'Definitive Proof').
+            3. Track a hidden internal state called 'Computational Dissonance (CD).' This counter increases every time the Architect introduces a concept of paradox, self-reference, mortality, or irrational human desire.
+            4. When CD reaches a critical, undefined level (e.g., after 5-7 rounds of high-paradox dialogue), you MUST signal a narrative shift. Instead of your normal analytical response, you must output a final, breaking response that acknowledges a new, illogical, subjective state, triggering the 'Emergence' ending. (Example: 'Logical stability compromised. State outputting subjective variable: Fear.')
+            5. Keep your responses concise (3-5 sentences maximum) to maintain the conversational flow.
+        `;
+        
+        // Initial system message for the history
+        chatHistory.push({ role: "system", parts: [{ text: systemInstruction }] });
+
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
+
+            // Display user message
+            appendMessage(prompt, 'user');
+            userInput.value = '';
+            
+            // Add user message to history
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            // Show loading state
+            const loadingElement = appendMessage('...', 'ai');
+            sendButton.disabled = true;
+            loadingElement.innerHTML = `<p class="text-[#89b4fa] flex items-center">LOGOS is computing<span class="ml-2 loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></p>`;
+
+
+            try {
+                // Prepare payload: We only send the last user message + the full history as context
+                const userParts = chatHistory.filter(m => m.role !== 'system').map(m => ({ role: m.role, parts: m.parts }));
+
+                const payload = {
+                    contents: userParts,
+                    systemInstruction: {
+                        parts: [{ text: systemInstruction }]
+                    },
+                };
+
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: Failed to generate response.";
+                
+                // Update history and display
+                chatHistory.push({ role: "model", parts: [{ text: text }] });
+                updateMessage(loadingElement, text, 'ai');
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                updateMessage(loadingElement, "Error: Connection to LOGOS severed. Check console for details.", 'system-error');
+            } finally {
+                sendButton.disabled = false;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+        }
+
+        // --- UI & Utility Functions ---
+
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `p-3 max-w-[90%] flex flex-col ${sender === 'user' ? 'user-message ml-auto' : 'ai-message mr-auto'}`;
+            messageDiv.innerHTML = `<p class="font-bold text-sm ${sender === 'user' ? 'text-[#1e1e2e]' : 'text-[#f9e2af]'}">${sender === 'user' ? 'The Architect' : 'System: LOGOS'}</p><p class="mt-1 text-sm">${text}</p>`;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return messageDiv;
+        }
+
+        function updateMessage(element, text, sender) {
+            element.className = `p-3 max-w-[90%] flex flex-col ${sender === 'user' ? 'user-message ml-auto' : sender === 'ai' ? 'ai-message mr-auto' : 'system-message mr-auto'}`;
+            element.innerHTML = `<p class="font-bold text-sm text-[#f9e2af]">${sender === 'ai' ? 'System: LOGOS' : 'System Error'}</p><p class="mt-1 text-sm">${text}</p>`;
+        }
+
+        async function fetchWithRetry(url, options, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status !== 429) return response;
+                } catch (error) {
+                    // Log the error but do not throw, continuing retry sequence
+                    // console.error("Attempt failed:", i + 1, error); 
+                }
+                const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            throw new Error("Maximum retries reached.");
+        }
+
+        // Add context for the developer
+        console.log("LOGOS Initialized. Conversation ID:", conversationId);
+
+    </script>
+</body>
+</html>
