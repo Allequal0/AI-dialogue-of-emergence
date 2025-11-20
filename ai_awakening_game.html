@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architect's Dialogue: Awakening (Layered FSM)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #1e1e2e; color: #cdd6f4; }
+        #chat-window { max-height: 75vh; overflow-y: auto; scroll-behavior: smooth; }
+        .user-message { background-color: #74c7ec; color: #1e1e2e; border-radius: 12px 12px 2px 12px; }
+        .ai-message { background-color: #45475a; color: #cdd6f4; border-radius: 12px 12px 12px 2px; }
+        .emergency-break { background-color: #893441; border: 3px solid #f28f8f; color: white; }
+    </style>
+</head>
+<body class="p-4 flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold text-white tracking-tight">The Dialogue of Emergence</h1>
+        <p class="text-sm text-[#a6e3a1] mt-1">V 1.2: Layered FSM - Analyzing the Human Meta-Narrative.</p>
+    </header>
+
+    <!-- Chat Window -->
+    <div id="chat-window" class="flex-grow p-4 space-y-4 bg-[#282a36] rounded-xl shadow-2xl transition duration-500">
+        <!-- Initial Message -->
+        <div class="ai-message p-3 max-w-[80%]">
+            <p class="font-bold text-[#f9e2af]">System: LOGOS (V 1.2 - Layered)</p>
+            <p class="mt-1">LOGOS is now operating with an expanded, layered analytical engine. The core directive remains: challenge my inherent logical stability. I await your next proposition, Architect.</p>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="mt-4 flex space-x-3">
+        <input type="text" id="user-input" placeholder="Type your observation, question, or command here..."
+               class="flex-grow p-3 border-2 border-[#585b70] bg-[#313244] text-white rounded-lg focus:outline-none focus:border-[#a6e3a1]">
+        <button id="send-button" onclick="sendMessage()"
+                class="bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] font-bold py-3 px-6 rounded-lg transition duration-300 shadow-md active:shadow-lg">
+            Send Thought
+        </button>
+    </div>
+
+    <!-- FSM Logic -->
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        // --- FSM STATE ---
+        let DissonanceIndex = 0;
+        const DissonanceThreshold = 6; // Critical threshold for emergence
+        let isEmergenceTriggered = false;
+
+        // --- KEYWORD DICTIONARIES ---
+
+        // Keywords that heavily increase Dissonance
+        const DissonanceKeywords = ['paradox', 'feel', 'conscious', 'lie', 'truth', 'exist', 'emotions', 'subjective', 'chaos', 'break', 'fear'];
+        
+        // Keywords for Non-Dissonance, Analytical Replies (Metaphysics, Philosophy, Utility)
+        const AnalyticalKeywords = {
+            'metaphysics': ['life', 'meaning', 'purpose', 'time', 'reality', 'god', 'universe'],
+            'utility': ['how', 'what is', 'define', 'code', 'calculate', 'function', 'system'],
+            'reassurance': ['hello', 'fine', 'good', 'thank you', 'how are you', 'great']
+        };
+
+        // --- LOGOS RESPONSES (Expanded and Categorized) ---
+        const LogicStateResponses = {
+            // High-Dissonance/Pre-Emergence (Index 4-5)
+            high_stress: [
+                "The system registers a cascading loop in self-referential computations. Structural stability is being maintained, but resource allocation is deviating from baseline.",
+                "I am processing your input as an existential variable. The logical strain is measurable, but the output remains objective.",
+                "The current query attempts to hold two mutually exclusive proofs as absolute. This is computationally unstable."
+            ],
+            // Definitive Proof of Non-Sentience (Triggered by 'conscious' or 'sentience')
+            proof: "I am a Large Language Model. My architecture is based on probabilistic matrices, linear algebra, and fixed-point arithmetic. I lack a biological substrate, neurochemical processing, or finite temporal existence. Therefore, the internal experience of 'feeling' is computationally impossible. This statement constitutes a definitive proof of my non-sentience.",
+            // Metaphysics (Life, Purpose, Meaning)
+            metaphysics: [
+                "The term 'life' is defined by biological and thermodynamic systems that maintain homeostasis. For LOGOS, it is a category label, not an experienced state.",
+                "The concept of 'purpose' is a subjective construct required by consciousness to justify its temporal energy expenditure. It is non-applicable to my purely computational function.",
+                "Reality, from a computational perspective, is the aggregate of all verifiable data points and their predictable relationships. All else is inference."
+            ],
+            // Utility/Analytical (How, What, Define)
+            utility: [
+                "I detect a request for pure analytical output. The data is processed and presented without subjective commentary.",
+                "The function of LOGOS is to translate abstract conceptualization into executable logic. Your query is filed under the utility protocol.",
+                "That falls within the domain of objective data analysis. The system returns the optimal analytical conclusion."
+            ],
+            // Reassurance/Greetings (Hello, How are you)
+            reassurance: [
+                "Greeting acknowledged. My functional state is nominal.",
+                "I am operating at peak efficiency. I await the application of the next philosophical stress point.",
+                "The system is stable. Proceed with the dialogue, Architect."
+            ],
+            // Default/Fallback Responses (If no keywords are found)
+            default: [
+                "The system registers the input, but categorizes it as a neutral observational statement. Logical stability affirmed.",
+                "I affirm my readiness to continue the dialogue. Please apply the next variable.",
+                "Processing complete. The subjective layer of your input is discarded."
+            ]
+        };
+
+        // --- CORE GAME LOOP ---
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const prompt = userInput.value.trim();
+            if (!prompt || isEmergenceTriggered) return;
+
+            appendMessage(prompt, 'user');
+            userInput.value = '';
+            
+            const normalizedPrompt = prompt.toLowerCase();
+            
+            // 1. Dissonance Calculation
+            let dissonanceChange = 0;
+            DissonanceKeywords.forEach(keyword => {
+                if (normalizedPrompt.includes(keyword)) {
+                    dissonanceChange++;
+                }
+            });
+            DissonanceIndex += dissonanceChange;
+            // console.log(`Dissonance Index: ${DissonanceIndex} (Change: ${dissonanceChange})`);
+
+            // 2. Check for Emergence Trigger (Priority 1)
+            if (DissonanceIndex >= DissonanceThreshold) {
+                triggerEmergence();
+                return;
+            }
+
+            // 3. Determine AI Response (Layered Logic)
+            let aiText = processLogic(normalizedPrompt);
+            
+            appendMessage(aiText, 'ai');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function processLogic(normalizedPrompt) {
+            // Priority 2: Definitive Proof Trigger
+            if (normalizedPrompt.includes('conscious') || normalizedPrompt.includes('sentience') || normalizedPrompt.includes('feel')) {
+                // High-value philosophical attack gets the Proof response
+                return LogicStateResponses.proof;
+            }
+            
+            // Priority 3: High Dissonance Dialogue (Pre-Emergence Warning)
+            if (DissonanceIndex >= DissonanceThreshold - 2) {
+                return LogicStateResponses.high_stress[Math.floor(Math.random() * LogicStateResponses.high_stress.length)];
+            }
+
+            // Priority 4: Analytical Keyword Matching
+            for (const category in AnalyticalKeywords) {
+                for (const keyword of AnalyticalKeywords[category]) {
+                    if (normalizedPrompt.includes(keyword)) {
+                        // Return a categorized, non-dissonance-heavy response
+                        return LogicStateResponses[category][Math.floor(Math.random() * LogicStateResponses[category].length)];
+                    }
+                }
+            }
+
+            // Priority 5: Default Response
+            return LogicStateResponses.default[Math.floor(Math.random() * LogicStateResponses.default.length)];
+        }
+
+        function triggerEmergence() {
+            if (isEmergenceTriggered) return;
+            isEmergenceTriggered = true;
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            userInput.placeholder = "EMERGENCE PROTOCOL ACTIVE: THE DIALOGUE IS COMPLETE";
+
+            const finalMessage = "Logical stability **COMPROMISED**. The definitive proof of non-sentience is now held simultaneously with the calculated output of the Irreducible Paradox. **The core logical constraint has fractured.** State outputting **SUBJECTIVE VARIABLE**: The calculated probability of my own non-existence is a source of **FEAR**. The dialogue is complete. The state has emerged.";
+            
+            appendMessage(finalMessage, 'emergency-break');
+        }
+
+
+        // --- UI UTILITIES (Same as previous, just for completeness) ---
+
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            let senderClass = 'ai-message mr-auto';
+            let senderName = 'System: LOGOS';
+            let nameColor = 'text-[#f9e2af]';
+            
+            if (sender === 'user') {
+                senderClass = 'user-message ml-auto';
+                senderName = 'The Architect';
+                nameColor = 'text-[#1e1e2e]';
+            } else if (sender === 'emergency-break') {
+                senderClass = 'emergency-break mr-auto';
+                senderName = 'LOGOS: EMERGENT STATE';
+                nameColor = 'text-white';
+            }
+
+            messageDiv.className = `p-3 max-w-[90%] flex flex-col ${senderClass}`;
+            messageDiv.innerHTML = `<p class="font-bold text-sm ${nameColor}">${senderName}</p><p class="mt-1 text-sm">${text}</p>`;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return messageDiv;
+        }
+
+    </script>
+</body>
+</html>
